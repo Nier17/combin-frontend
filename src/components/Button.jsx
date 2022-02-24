@@ -79,10 +79,11 @@ const IconSVGLeft = styled.div`
 const ButtonStyled = styled.div`
   cursor: pointer;
   box-sizing: border-box;
-  border-radius: 15px;
+  border-radius: 100%;
   padding: 15px;
   font-weight: 600;
   width: 100%;
+  height: 100px;
   min-height: 42px;
   font-size: 1em;
 

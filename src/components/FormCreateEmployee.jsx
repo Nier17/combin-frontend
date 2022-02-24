@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from "react";
+import React, { useMemo, useEffect, useRef, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import { ConnectedFocusError } from "focus-formik-error";
 import * as yup from "yup";
@@ -9,6 +9,8 @@ import Spinner from "./Spinner";
 import HelperObj from "../helpers/HelperObj";
 import NotificationBox from "./NotificationBox";
 import Button from "./Button";
+import { useIdleTimer } from "react-idle-timer";
+
 const FormCreateEmployee = ({
   initData,
   onSubmit,
@@ -19,7 +21,7 @@ const FormCreateEmployee = ({
   onClickNotification,
   notificationTextType,
 }) => {
-  const initDataFormatted = useMemo(
+  var initDataFormatted = useMemo(
     () =>
       produce(initData, (draft) => {
         let init = {
@@ -32,6 +34,7 @@ const FormCreateEmployee = ({
       }),
     [initData]
   );
+  const resetButton = useRef(null);
   const notificationRef = useRef();
   useEffect(() => {
     if (notificationText && notificationRef.current) {
@@ -43,24 +46,77 @@ const FormCreateEmployee = ({
     return errors;
   };
 
+  const handleOnIdle = (event) => {
+    console.log("user is idle", event);
+    var d = new Date(getLastActiveTime());
+    console.log("last active", d);
+  };
+  const { getRemainingTime, getLastActiveTime } = useIdleTimer({
+    timeout: 1000 * 60 * 15,
+    onIdle: handleOnIdle,
+    debounce: 500,
+  });
+  const [lastActive, setLastActive] = useState(new Date(getLastActiveTime()));
+  const [saveDisabled, setSaveDisabled] = useState(false);
+
+  const disable = () => {
+    console.log(initDataFormatted);
+    if (initDataFormatted.firstName.length > 1) {
+      setSaveDisabled(true);
+    }
+  };
+  useEffect(() => {
+    disable();
+  }, [initDataFormatted]);
+  const [actualTime, setActualTime] = useState(new Date());
+
+  const [currentCount, setCount] = useState(0);
+  const timer = () => setCount(currentCount + 1);
+
+  useEffect(() => {
+    const id = setInterval(timer, 1000);
+    setLastActive(new Date(getLastActiveTime()));
+    setActualTime(new Date());
+    var diff = (actualTime.getTime() - lastActive.getTime()) / 1000;
+    if (diff > 120) {
+      resetButton.current.click();
+    }
+    console.log(actualTime);
+    console.log(lastActive);
+    return () => clearInterval(id);
+  }, [currentCount]);
+
   return (
     <Formik
       enableReinitialize={true}
       validate={validate}
       initialValues={initDataFormatted}
       validationSchema={yup.object({
-        firstName: yup.string().required("Es obligatorio completar este dato."),
-        lastName: yup.string().required("Es obligatorio completar este dato."),
-        address: yup.string().required("Es obligatorio completar este dato."),
-        ssn: yup.string().required("Es obligatorio completar este dato."),
+        firstName: yup
+          .string()
+          .required("This field should be filled.")
+          .min(2, "Must be more than 1 character"),
+        lastName: yup
+          .string()
+          .required("This field should be filled.")
+          .min(2, "Must be more than 1 character"),
+        address: yup
+          .string()
+          .required("This field should be filled.")
+          .min(2, "Must be more than 1 character"),
+        ssn: yup
+          .string()
+          .required("This field should be filled.")
+          .min(2, "Must be more than 1 character"),
       })}
-      onSubmit={(values, { setSubmitting }) => {
+      onSubmit={(values, { setSubmitting, resetForm }) => {
         onSubmit(HelperObj.clean(values));
       }}
     >
       {({
         values,
         errors,
+        resetForm,
         touched,
         setFieldValue,
         setFieldTouched,
@@ -84,7 +140,7 @@ const FormCreateEmployee = ({
                 type="text"
                 name="firstName"
                 placeholder="First Name"
-                // hasError={touched.nombre && errors.nombre}
+                hasError={touched.firstName && errors.firstName}
               />
             </ContainerQuestion>
             <ContainerQuestion>
@@ -92,7 +148,7 @@ const FormCreateEmployee = ({
                 type="text"
                 name="lastName"
                 placeholder="Last Name"
-                // hasError={touched.apellido && errors.apellido}
+                hasError={touched.lastName && errors.lastName}
               />
             </ContainerQuestion>
 
@@ -101,7 +157,7 @@ const FormCreateEmployee = ({
                 type="text"
                 name="address"
                 placeholder="Address"
-                // hasError={touched.correo && errors.correo}
+                hasError={touched.address && errors.address}
               />
             </ContainerQuestion>
             <ContainerQuestion>
@@ -109,7 +165,7 @@ const FormCreateEmployee = ({
                 type="text"
                 name="ssn"
                 placeholder="SSN"
-                // hasError={touched.correo && errors.correo}
+                hasError={touched.ssn && errors.ssn}
               />
             </ContainerQuestion>
 
@@ -117,16 +173,17 @@ const FormCreateEmployee = ({
               <StyledButton
                 type="primary"
                 text={"Reset"}
+                ref={resetButton}
                 onClick={() => {
-                  submitForm();
+                  resetForm();
                 }}
               ></StyledButton>
               <StyledButton
                 type="primary"
                 text={"Save"}
+                disabled={saveDisabled}
                 onClick={() => {
                   submitForm();
-                  console.log("gfdgfd");
                 }}
               ></StyledButton>
             </ButtonWrapper>

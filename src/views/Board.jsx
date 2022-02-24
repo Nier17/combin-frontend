@@ -32,8 +32,8 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 const Container = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
+  /* display: flex;
+  flex-wrap: nowrap; */
   transition: all 1s;
 `;
 const Menu = styled.div`

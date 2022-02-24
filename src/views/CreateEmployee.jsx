@@ -47,7 +47,7 @@ const CreateEmployee = ({ tokenData }) => {
       }
     >
       <FormCreateEmployee
-        initData={{ nombre: "", apellido: "", fecnac: "" }}
+        initData={{}}
         onSubmit={(data) => {
           setData(data);
           setIsSubmitting(true);
